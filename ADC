@@ -1,0 +1,162 @@
+//############## DECLARACION DE VARIABLES #######################
+
+#include <xc.h>
+#include "confi.h"
+//#include "bitsconf.h" //LLAMO LA LIBRERIA DE LOS BITS DE CONFIGURACION 
+#define _XTAL_FREQ 8000000 //DEFINO LA FRECUENCOA DE RELOJ DE OSCILADOR 
+ 
+void main (void);
+void ADC (void);
+void contadorbinario(void);
+
+int cont0 = 0;
+char ciclo = 1;
+char todo = 1; 
+int adc ;
+const unsigned char display[16] ={0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x67,0x77,0x7C,0x39,0x5E,0x79,0x71}; 
+//###################DECLARACION DE CONFIGURACION #############################
+int H;
+int L; 
+
+void main (void){
+    
+//###############OSCILADOR 8MH###################################
+OSCCONbits.IRCF = 0b111; //DE 8MH 
+OSCCONbits.SCS = 0b00; // 
+ 
+// CONFIGURACION DE PUERTOS 
+TRISA = 0b00000000; //PUERTO A COMO SALIDA PARA LEDS
+TRISB = 0b01111111; //PUERTO B COMO ENTRADA PAFRA PUSH Y POT
+TRISC = 0b00000000; //PUERTO C COMO SALIDA  DISPLAY
+TRISD = 0b00000000; //PUERTO D COMO SALIDA CONTADOR
+TRISE = 1; // PUERTO E COMO SALIDA 
+
+PORTA = 0b00000000; // LIMPIAMOS LOS PUERTOS 
+PORTB = 0b00000000; // LIMPIAMOS LOS PUERTOS 
+PORTC = 0b00000000; // LIMPIAMOS LOS PUERTOS 
+PORTD = 0b00000000; // LIMPIAMOS LOS PUERTOS 
+PORTE = 0b00010;  // LIMPIAMOS LOS PUERTOS 
+ANSELH = 0; //PARA PONER LAS ENTRADAS COMO DIGITALES 
+
+///CONFIGURACION DEL ADC 
+//CONFIGURO EL AN6 RE1 COMO ENTRADA 
+ANSELbits.ANS6 = 0  ;
+
+//SELECCION DEL FOSC/8
+ADCON0bits.ADCS0 = 1;
+ADCON0bits.ADCS1 = 0; 
+ 
+//SELECIONAMOS EL CANAL 
+ADCON0bits.CHS0 = 0;
+ADCON0bits.CHS1 = 1;
+ADCON0bits.CHS2 = 1;
+ADCON0bits.CHS3 = 0;
+
+//PINES DE REFERENCIA 
+ADCON1bits.VCFG0= 0; //VDD
+ADCON1bits.VCFG1= 0; //VSS
+//JUSTIFICACION IZQUIERDA 
+ADCON1bits.ADFM = 0; 
+
+//CONFIGURACION DEL PUERTO 
+ADCON1bits.ADFM = 0; 
+
+//PARA CONVERSION DEL ADC
+ADCON0bits.GO_DONE = 1; 
+
+//PARA HABILITAR ADC 
+ADCON0bits.ADON = 1; 
+
+
+//ENCENDER BANDERA DEL ADC
+INTCONbits.GIE = 1;
+PIE1bits.ADIE=0; 
+PIE1bits.ADIE=1;
+
+ 
+    
+    
+    
+while(1){
+if (ADCON0bits.GO_DONE ==0){
+    ADCON0bits.GO_DONE = 1; 
+   PORTD = ADRESH; 
+   PORTD = display[16]; 
+     }}
+
+
+
+//#########HABILITOS LAS INTERRUPCIONES#########
+INTCONbits.GIE = 1; //interrupcion global  
+INTCONbits.RBIF = 0; //SE LIMPIA
+INTCONbits.RBIF = 1; //SE PONE HABILITADO LA BANDERA DEL INTERRUPT ON CHANGE
+IOCB = 1; 
+IOCBbits.IOCB0 = 1; //LA BANDERA EN PUERTO B0
+IOCBbits.IOCB3 = 1; //BANDERA EN PUERTO B3 
+
+      //while(1);  
+contadorbinario();
+return;
+}
+
+
+/*/void ADC (void){
+    __delay_ms(100);
+    
+    while (1);{
+    ADCON0bits.GO_DONE = 1 ; 
+     while (ADCON0bits.GO_DONE);  
+       PIE1bits.ADIE = 0;
+       adc = ADRESL; 
+       adc = adc>>8;
+       adc = adc+ADRESH; 
+       PORTD = adc; 
+    }
+    return; 
+    }*/
+     
+
+
+void contadorbinario(void){
+    __delay_ms(3000);
+    do{ 
+        if(IOCBbits.IOCB0 = 1   && PORTBbits.RB0== 1){
+            PORTBbits.RB7 = 1;
+            cont0++;
+            __delay_ms(500);
+            IOCBbits.IOCB0 = 0; 
+            do{
+                //********
+            }while(PORTBbits.RB0 == 1);
+            PORTA = cont0;
+        }
+        if(IOCBbits.IOCB3 = 1   && PORTBbits.RB3== 1){
+            cont0--;
+            __delay_ms(500);
+            do{
+                //********
+            }while(PORTBbits.RB3 == 1);
+            PORTA = cont0;
+            IOCBbits.IOCB3 = 0; 
+        }
+       if(cont0>255){
+           cont0 = 0;           
+        }  
+    }
+while(ciclo==1); return; 
+}
+
+
+/*while (1);{
+    if(ADCON0bits.GO_DONE ==0 && PIE1bits.ADIE==1){
+       ADCON0bits.GO_DONE = 1;  
+       PIE1bits.ADIE = 0;
+       adc = ADRESL; 
+       adc = adc>>8;
+       adc = adc+ADRESH; 
+       PORTD = ADRESH; 
+    }
+    }
+     return; 
+}
+*/
